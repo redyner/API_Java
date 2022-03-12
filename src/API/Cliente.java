@@ -14,6 +14,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import javax.swing.*;
 
 public class Cliente extends JFrame implements ActionListener, KeyListener {
@@ -32,23 +35,24 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 	private JTextField txtIP;
 	private JTextField txtPorta;
 	private JTextField txtNome;
-	private String[] data = {"Economia", "Entretenimento", "Tecnologia"};
-	 
+	private String[] data = { "Economia", "Entretenimento", "Tecnologia" };
+	private JList<String> temas = new JList<String>(data);
+	private DateTimeFormatter hora_atual = DateTimeFormatter.ofPattern("HH:mm");
+
 	public Cliente() throws IOException {
 		JLabel lblMessage = new JLabel("Verificar!");
 		txtIP = new JTextField("127.0.0.1");
 		txtPorta = new JTextField("12345");
 		txtNome = new JTextField("Cliente");
-		JList<String> temas = new JList<String>(data);
 		Object[] texts = { lblMessage, txtIP, txtPorta, txtNome, temas };
 		JOptionPane.showMessageDialog(null, texts);
 		pnlContent = new JPanel();
 		texto = new JTextArea(10, 20);
 		texto.setEditable(false);
 		texto.setBackground(new Color(240, 240, 240));
-		txtMsg = new JTextField(20);
-		lblHistorico = new JLabel("Histórico");
 		lblMsg = new JLabel("Mensagem");
+		txtMsg = new JTextField(25);
+		lblHistorico = new JLabel(temas.getSelectedValue());
 		btnSend = new JButton("Enviar");
 		btnSend.setToolTipText("Enviar Mensagem");
 		btnSair = new JButton("Sair");
@@ -68,18 +72,17 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 		pnlContent.setBackground(Color.LIGHT_GRAY);
 		texto.setBorder(BorderFactory.createEtchedBorder(Color.BLUE, Color.BLUE));
 		txtMsg.setBorder(BorderFactory.createEtchedBorder(Color.BLUE, Color.BLUE));
-		//setTitle(txtNome.getText());
-		setTitle(temas.getSelectedValue());
+		setTitle(txtNome.getText());
 		setContentPane(pnlContent);
 		setLocationRelativeTo(null);
 		setResizable(false);
-		setSize(250, 300);
+		setSize(300, 350);
 		setVisible(true);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 	}
 
 	/***
-	 * Método usado para conectar no server socket, retorna IO Exception caso dê
+	 * Mï¿½todo usado para conectar no server socket, retorna IO Exception caso dï¿½
 	 * algum erro.
 	 * 
 	 * @throws IOException
@@ -95,10 +98,10 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 	}
 
 	/***
-	 * Método usado para enviar mensagem para o server socket
+	 * Mï¿½todo usado para enviar mensagem para o server socket
 	 * 
 	 * @param msg do tipo String
-	 * @throws IOException retorna IO Exception caso dê algum erro.
+	 * @throws IOException retorna IO Exception caso dï¿½ algum erro.
 	 */
 	public void enviarMensagem(String msg) throws IOException {
 
@@ -106,17 +109,17 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 			bfw.write("Desconectado \r\n");
 			texto.append("Desconectado \r\n");
 		} else {
-			bfw.write(msg + "\r\n");
-			texto.append(txtNome.getText() + " diz -> " + txtMsg.getText() + "\r\n");
+			bfw.write(temas.getSelectedValue() +": "+ msg + " (" + hora_atual.format(LocalDateTime.now())  + ")\r\n");
+			//texto.append(txtNome.getText() + " diz -> " + txtMsg.getText() + "\r\n");
 		}
 		bfw.flush();
 		txtMsg.setText("");
 	}
 
 	/**
-	 * Método usado para receber mensagem do servidor
+	 * Mï¿½todo usado para receber mensagem do servidor
 	 * 
-	 * @throws IOException retorna IO Exception caso dê algum erro.
+	 * @throws IOException retorna IO Exception caso dï¿½ algum erro.
 	 */
 	public void escutar() throws IOException {
 
@@ -137,9 +140,9 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 	}
 
 	/***
-	 * Método usado quando o usuário clica em sair
+	 * Mï¿½todo usado quando o usuï¿½rio clica em sair
 	 * 
-	 * @throws IOException retorna IO Exception caso dê algum erro.
+	 * @throws IOException retorna IO Exception caso dï¿½ algum erro.
 	 */
 	public void sair() throws IOException {
 
@@ -159,7 +162,6 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 			else if (e.getActionCommand().equals(btnSair.getActionCommand()))
 				sair();
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
@@ -171,7 +173,6 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 			try {
 				enviarMensagem(txtMsg.getText());
 			} catch (IOException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 		}
@@ -179,12 +180,12 @@ public class Cliente extends JFrame implements ActionListener, KeyListener {
 
 	@Override
 	public void keyReleased(KeyEvent arg0) {
-		// TODO Auto-generated method stub
+
 	}
 
 	@Override
 	public void keyTyped(KeyEvent arg0) {
-		// TODO Auto-generated method stub
+
 	}
 
 	public static void main(String[] args) throws IOException {

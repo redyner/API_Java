@@ -25,7 +25,7 @@ public class Servidor extends Thread {
 	private BufferedReader bfr;
 
 	/**
-	 * Método construtor
+	 * Mï¿½todo construtor
 	 * 
 	 * @param com do tipo Socket
 	 */
@@ -41,7 +41,7 @@ public class Servidor extends Thread {
 	}
 
 	/**
-	 * Método run
+	 * Mï¿½todo run
 	 */
 	public void run() {
 
@@ -67,7 +67,7 @@ public class Servidor extends Thread {
 	}
 
 	/***
-	 * Método usado para enviar mensagem para todos os clients
+	 * Mï¿½todo usado para enviar mensagem para todos os clients
 	 * 
 	 * @param bwSaida do tipo BufferedWriter
 	 * @param msg     do tipo String
@@ -86,14 +86,14 @@ public class Servidor extends Thread {
 	}
 
 	/***
-	 * Método main
+	 * Mï¿½todo main
 	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
 
 		try {
-			// Cria os objetos necessário para instânciar o servidor
+			// Cria os objetos necessï¿½rio para instï¿½nciar o servidor
 			JLabel lblMessage = new JLabel("Porta do Servidor:");
 			JTextField txtPorta = new JTextField("12345");
 			Object[] texts = { lblMessage, txtPorta };
@@ -103,7 +103,7 @@ public class Servidor extends Thread {
 			JOptionPane.showMessageDialog(null, "Servidor ativo na porta: " + txtPorta.getText());
 
 			while (true) {
-				System.out.println("Aguardando conexão...");
+				System.out.println("Aguardando conexï¿½o...");
 				Socket con = server.accept();
 				System.out.println("Cliente conectado...");
 				Thread t = new Servidor(con);
@@ -114,5 +114,5 @@ public class Servidor extends Thread {
 
 			e.printStackTrace();
 		}
-	}// Fim do método main
+	}// Fim do mï¿½todo main
 } // Fim da classe
