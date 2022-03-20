@@ -1,198 +1,118 @@
 package API;
 
-import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.net.Socket;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.net.UnknownHostException;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 
-import javax.swing.*;
+public class Cliente extends Thread {
 
-public class Cliente extends JFrame implements ActionListener, KeyListener {
-	private static final long serialVersionUID = 1L;
-	private JTextArea texto;
-	private JTextField txtMsg;
-	private JButton btnSend;
-	private JButton btnSair;
-	private JLabel lblHistorico;
-	private JLabel lblMsg;
-	private JPanel pnlContent;
-	private Socket socket;
-	private OutputStream ou;
-	private Writer ouw;
-	private BufferedWriter bfw;
-	private JTextField txtIP;
-	private JTextField txtPorta;
-	private JTextField txtNome;
-	private String[] data = { "Economia", "Entretenimento", "Tecnologia" };
-	private JList<String> temas = new JList<String>(data);
-	private DateTimeFormatter hora_atual = DateTimeFormatter.ofPattern("HH:mm");
+	BufferedReader entrada;
 
-	public Cliente() throws IOException {
-		JLabel lblMessage = new JLabel("Verificar!");
-		txtIP = new JTextField("127.0.0.1");
-		txtPorta = new JTextField("12345");
-		txtNome = new JTextField("Cliente");
-		Object[] texts = { lblMessage, txtIP, txtPorta, txtNome, temas };
-		JOptionPane.showMessageDialog(null, texts);
-		pnlContent = new JPanel();
-		texto = new JTextArea(10, 20);
-		texto.setEditable(false);
-		texto.setBackground(new Color(240, 240, 240));
-		lblMsg = new JLabel("Mensagem");
-		txtMsg = new JTextField(25);
-		lblHistorico = new JLabel(temas.getSelectedValue());
-		btnSend = new JButton("Enviar");
-		btnSend.setToolTipText("Enviar Mensagem");
-		btnSair = new JButton("Sair");
-		btnSair.setToolTipText("Sair do Chat");
-		btnSend.addActionListener(this);
-		btnSair.addActionListener(this);
-		btnSend.addKeyListener(this);
-		txtMsg.addKeyListener(this);
-		JScrollPane scroll = new JScrollPane(texto);
-		texto.setLineWrap(true);
-		pnlContent.add(lblHistorico);
-		pnlContent.add(scroll);
-		pnlContent.add(lblMsg);
-		pnlContent.add(txtMsg);
-		pnlContent.add(btnSair);
-		pnlContent.add(btnSend);
-		pnlContent.setBackground(Color.LIGHT_GRAY);
-		texto.setBorder(BorderFactory.createEtchedBorder(Color.BLUE, Color.BLUE));
-		txtMsg.setBorder(BorderFactory.createEtchedBorder(Color.BLUE, Color.BLUE));
-		setTitle(txtNome.getText());
-		setContentPane(pnlContent);
-		setLocationRelativeTo(null);
-		setResizable(false);
-		setSize(300, 350);
-		setVisible(true);
-		setDefaultCloseOperation(EXIT_ON_CLOSE);
+	static String dig_mensagem;
+
+	public Cliente(BufferedReader i) {
+
+		entrada = i;
+		dig_mensagem = "Not Null";
 	}
 
-	/***
-	 * M�todo usado para conectar no server socket, retorna IO Exception caso d�
-	 * algum erro.
-	 * 
-	 * @throws IOException
-	 */
-	public void conectar() throws IOException {
+	public static void main(String[] args) throws UnknownHostException, IOException {
 
-		socket = new Socket(txtIP.getText(), Integer.parseInt(txtPorta.getText()));
-		ou = socket.getOutputStream();
-		ouw = new OutputStreamWriter(ou);
-		bfw = new BufferedWriter(ouw);
-		bfw.write(txtNome.getText() + "\r\n");
-		bfw.flush();
-	}
+		System.out.println("Cliente Ativo!");
 
-	/***
-	 * M�todo usado para enviar mensagem para o server socket
-	 * 
-	 * @param msg do tipo String
-	 * @throws IOException retorna IO Exception caso d� algum erro.
-	 */
-	public void enviarMensagem(String msg) throws IOException {
+		String msg_digitada; // mensagem digitada
+		String msg_recebida; // mensagem recebida
+		JTextField nome_cliente; // nome do cliente
+		JTextField ip; // ip da conexão
+		JTextField porta; // porta da conexão
+		String[] data = { "Economia", "Entretenimento", "Tecnologia" }; // opções de assunto
+		JList<String> assunto = new JList<String>(data); // lista de assuntos
 
-		if (msg.equals("Sair")) {
-			bfw.write("Desconectado \r\n");
-			texto.append("Desconectado \r\n");
-		} else {
-			bfw.write(temas.getSelectedValue() +": "+ msg + " (" + hora_atual.format(LocalDateTime.now())  + ")\r\n");
-			//texto.append(txtNome.getText() + " diz -> " + txtMsg.getText() + "\r\n");
+		//Menu de opções
+		JLabel lblMessage = new JLabel("Conectar");
+		ip = new JTextField("localhost");
+		porta = new JTextField("8657");
+		nome_cliente = new JTextField("Cliente");
+		Object[] texts = { lblMessage, nome_cliente, assunto };
+        do{
+            JOptionPane.showMessageDialog(null, texts);
+            if(assunto.getSelectedValue()==null)
+                JOptionPane.showMessageDialog(null, "Escolha um assunto!");
+            if(nome_cliente.getText().replaceAll("\\s+","").isEmpty())
+                JOptionPane.showMessageDialog(null, "Informe o nome do cliente!");
+        }while(assunto.getSelectedValue()==null || nome_cliente.getText().isEmpty());
+		// cria o stream do teclado
+		BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in));
+
+		// cria o socket de acesso ao server hostname na porta 8657
+		Socket cliente = new Socket(ip.getText(), Integer.parseInt(porta.getText()));
+		System.out.println(nome_cliente.getText() + " entrou no chat!");
+
+		// Envia a Mensagem
+		DataOutputStream saida_servidor = new DataOutputStream(cliente.getOutputStream());
+		// Recebe a Mensagem
+		BufferedReader entrada_servidor = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
+
+		saida_servidor.writeBytes(nome_cliente.getText() + "\n");
+		msg_recebida = entrada_servidor.readLine();
+		System.out.println(msg_recebida);
+
+		// envia a linha para o servidor
+		saida_servidor.writeBytes(assunto.getSelectedValue() + '\n');
+
+		// lê a linha para o servidor
+		msg_recebida = entrada_servidor.readLine();
+
+		// apresenta a linha do servidor na console
+		System.out.println(msg_recebida);
+
+		// Inicializa a Thread que recebe a mensagem 
+		Thread t = new Cliente(entrada_servidor);
+
+		t.start();
+
+		while (true) {
+			// le uma linha do teclado
+			msg_digitada = teclado.readLine();
+
+			// testa se o chat deve ser finalizado
+			if (msg_digitada.startsWith("fim") == true)
+				break;
+
+			// envia a linha para o servidor
+			saida_servidor.writeBytes(msg_digitada + '\n');
 		}
-		bfw.flush();
-		txtMsg.setText("");
+
+		// lê uma linha do servidor
+		msg_recebida = entrada_servidor.readLine();
+
+		if (msg_recebida != null) {
+			System.out.println(msg_recebida);
+		}
+		// fecha o cliente
+		cliente.close();
+		System.out.println(nome_cliente.getText() + " saiu do chat!");
 	}
 
-	/**
-	 * M�todo usado para receber mensagem do servidor
-	 * 
-	 * @throws IOException retorna IO Exception caso d� algum erro.
-	 */
-	public void escutar() throws IOException {
-
-		InputStream in = socket.getInputStream();
-		InputStreamReader inr = new InputStreamReader(in);
-		BufferedReader bfr = new BufferedReader(inr);
-		String msg = "";
-
-		while (!"Sair".equalsIgnoreCase(msg))
-
-			if (bfr.ready()) {
-				msg = bfr.readLine();
-				if (msg.equals("Sair"))
-					texto.append("Servidor caiu! \r\n");
-				else
-					texto.append(msg + "\r\n");
-			}
-	}
-
-	/***
-	 * M�todo usado quando o usu�rio clica em sair
-	 * 
-	 * @throws IOException retorna IO Exception caso d� algum erro.
-	 */
-	public void sair() throws IOException {
-
-		enviarMensagem("Sair");
-		bfw.close();
-		ouw.close();
-		ou.close();
-		socket.close();
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent e) {
-
+	public void run() {
 		try {
-			if (e.getActionCommand().equals(btnSend.getActionCommand()))
-				enviarMensagem(txtMsg.getText());
-			else if (e.getActionCommand().equals(btnSair.getActionCommand()))
-				sair();
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
-	}
-
-	@Override
-	public void keyPressed(KeyEvent e) {
-
-		if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-			try {
-				enviarMensagem(txtMsg.getText());
-			} catch (IOException e1) {
-				e1.printStackTrace();
+			// Verifica se o Chat foi encerrado
+			while (dig_mensagem != null && !(dig_mensagem.trim().equals("")) && !(dig_mensagem.startsWith("fim"))) {
+				System.out.println(entrada.readLine());
 			}
+			System.exit(0);
+		} catch (IOException e) {
+			System.exit(0);
+
 		}
-	}
 
-	@Override
-	public void keyReleased(KeyEvent arg0) {
-
-	}
-
-	@Override
-	public void keyTyped(KeyEvent arg0) {
-
-	}
-
-	public static void main(String[] args) throws IOException {
-
-		Cliente app = new Cliente();
-		app.conectar();
-		app.escutar();
 	}
 
 }

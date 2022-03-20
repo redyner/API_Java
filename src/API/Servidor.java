@@ -1,118 +1,153 @@
 package API;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import javax.swing.JLabel;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Vector;
 import javax.swing.JOptionPane;
-import javax.swing.JTextField;
 
 public class Servidor extends Thread {
-	private static ArrayList<BufferedWriter> clientes;
-	private static ServerSocket server;
-	private String nome;
-	private Socket con;
-	private InputStream in;
-	private InputStreamReader inr;
-	private BufferedReader bfr;
 
-	/**
-	 * M�todo construtor
-	 * 
-	 * @param com do tipo Socket
-	 */
-	public Servidor(Socket con) {
-		this.con = con;
+	private Socket conexao;
+
+	public Servidor(Socket s) {
+		conexao = s;
+	}
+	//Declaração dos Vetores
+	private static Vector<DataOutputStream> vet_Saida_Economia = new Vector<DataOutputStream>();
+	private static Vector<DataOutputStream> vet_Saida_Entretenimento = new Vector<DataOutputStream>();
+	private static Vector<DataOutputStream> vet_Saida_Tecnologia = new Vector<DataOutputStream>();
+	private static Vector<DataOutputStream> vet_Saida_Erro = new Vector<DataOutputStream>();
+
+	public static void main(String[] args) throws IOException {
+
+		// cria socket de comunicação com os clientes na porta 8657;
+		ServerSocket servidor = new ServerSocket(8657);
+
+		// Classe de Execu��o
+		while (true) {
+			// espera conex�o de algum cliente
+			System.out.println("Esperando cliente se conectar...");
+			Socket cx = servidor.accept();
+			Thread t = new Servidor(cx);
+			t.start();
+
+			System.out.println("Cliente conectado!");
+		}
+	}
+
+	
+	public void run() {
+		String msg_recebida; // lida do cliente
+		String msg_enviada; // enviada ao cliente
+		String nome_cliente; // nome do Cliente
+		String assunto; // assunto escolhido
+
+		BufferedReader entrada_cliente;
+
 		try {
-			in = con.getInputStream();
-			inr = new InputStreamReader(in);
-			bfr = new BufferedReader(inr);
+			entrada_cliente = new BufferedReader(new InputStreamReader(conexao.getInputStream()));
+
+			DataOutputStream saida_cliente = new DataOutputStream(conexao.getOutputStream());
+			// lê o nome do Cliente
+			nome_cliente = entrada_cliente.readLine();
+
+			// Envia retorno para cliente
+			saida_cliente.writeBytes("Servidor diz: Olá " + nome_cliente + "! ("+dataAtual()+")\n");
+
+			assunto = entrada_cliente.readLine();
+
+			Integer i;
+			Vector<DataOutputStream> v;
+
+			switch (assunto) {
+			case "Economia":
+				vet_Saida_Economia.add(saida_cliente);
+				v = vet_Saida_Economia;
+				break;
+
+			case "Entretenimento":
+				vet_Saida_Entretenimento.add(saida_cliente);
+				v = vet_Saida_Entretenimento;
+				break;
+
+			case "Tecnologia":
+				vet_Saida_Tecnologia.add(saida_cliente);
+				v = vet_Saida_Tecnologia;
+				break;
+
+			default:
+				JOptionPane.showMessageDialog(null, "Erro 004 opção inválida!");
+				vet_Saida_Erro.add(saida_cliente);
+				v = vet_Saida_Erro;
+			}
+			
+			i = 0;
+			//Envia a mensagem recebida para todos do mesmo assunto
+			while (i < v.size()) {
+				if (v.get(i) != saida_cliente)
+					v.get(i).writeBytes("Servidor diz: " + nome_cliente + " entrou no assunto " + assunto + " ("+dataAtual()+")\n");
+				i = i + 1;
+			}
+
+			// Ler a mensagem recebida pelo Cliente enquanto nada é enviado
+			msg_recebida = entrada_cliente.readLine();
+
+			//Enquanto a mensagem for recebida não for nula ou finalizada
+			while (msg_recebida != null && !(msg_recebida.trim().equals("")) && !(msg_recebida.startsWith("fim"))) {
+
+				// Mostra Mensagem recebida pelo Console
+				System.out.println(nome_cliente + ": " + msg_recebida+"\n");
+
+			
+				msg_enviada = nome_cliente +" -> "+assunto+": " + msg_recebida + " ("+horaAtual()+")\n";
+				i = 0;
+
+				//Envia a mensagem recebida para todos, exceto para o que enviou
+				while (i < v.size()) {
+					if (v.get(i) != saida_cliente) {
+						// Envia retorno para Cliente
+						v.get(i).writeBytes(msg_enviada);
+					}
+					i = i + 1;
+				}
+				msg_recebida = entrada_cliente.readLine();
+			}
+			
+			i = 0;
+
+			while (i < v.size()) {
+				v.get(i).writeBytes(nome_cliente + " saiu " + assunto + "! Data e Hora: "+dataAtual()+">\n");
+				i = i + 1;
+			}
+			
+			i = 0;
+			
+			while (i < v.size()) {
+				if (v.get(i) == saida_cliente) {
+					v.remove(v.get(i));
+					System.out.println("Cliente Desconectado");
+				}
+				i = i + 1;
+			}
+			conexao.close();
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
+		}}
+	private String dataAtual() {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+		LocalDateTime now = LocalDateTime.now();
+		return dtf.format(now);
 	}
 
-	/**
-	 * M�todo run
-	 */
-	public void run() {
-
-		try {
-
-			String msg;
-			OutputStream ou = this.con.getOutputStream();
-			Writer ouw = new OutputStreamWriter(ou);
-			BufferedWriter bfw = new BufferedWriter(ouw);
-			clientes.add(bfw);
-			nome = msg = bfr.readLine();
-
-			while (!"Sair".equalsIgnoreCase(msg) && msg != null) {
-				msg = bfr.readLine();
-				sendToAll(bfw, msg);
-				System.out.println(msg);
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-
-		}
+	private String horaAtual() {
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH:mm:ss");
+		LocalDateTime now = LocalDateTime.now();
+		return dtf.format(now);
 	}
-
-	/***
-	 * M�todo usado para enviar mensagem para todos os clients
-	 * 
-	 * @param bwSaida do tipo BufferedWriter
-	 * @param msg     do tipo String
-	 * @throws IOException
-	 */
-	public void sendToAll(BufferedWriter bwSaida, String msg) throws IOException {
-		BufferedWriter bwS;
-
-		for (BufferedWriter bw : clientes) {
-			bwS = (BufferedWriter) bw;
-			if (!(bwSaida == bwS)) {
-				bw.write(nome + " -> " + msg + "\r\n");
-				bw.flush();
-			}
-		}
-	}
-
-	/***
-	 * M�todo main
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) {
-
-		try {
-			// Cria os objetos necess�rio para inst�nciar o servidor
-			JLabel lblMessage = new JLabel("Porta do Servidor:");
-			JTextField txtPorta = new JTextField("12345");
-			Object[] texts = { lblMessage, txtPorta };
-			JOptionPane.showMessageDialog(null, texts);
-			server = new ServerSocket(Integer.parseInt(txtPorta.getText()));
-			clientes = new ArrayList<BufferedWriter>();
-			JOptionPane.showMessageDialog(null, "Servidor ativo na porta: " + txtPorta.getText());
-
-			while (true) {
-				System.out.println("Aguardando conex�o...");
-				Socket con = server.accept();
-				System.out.println("Cliente conectado...");
-				Thread t = new Servidor(con);
-				t.start();
-			}
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-		}
-	}// Fim do m�todo main
-} // Fim da classe
+}
