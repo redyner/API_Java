@@ -48,6 +48,7 @@ public class Cliente extends Thread {
             if(nome_cliente.getText().replaceAll("\\s+","").isEmpty())
                 JOptionPane.showMessageDialog(null, "Informe o nome do cliente!");
         }while(assunto.getSelectedValue()==null || nome_cliente.getText().isEmpty());
+		
 		// cria o stream do teclado
 		BufferedReader teclado = new BufferedReader(new InputStreamReader(System.in));
 
@@ -60,18 +61,16 @@ public class Cliente extends Thread {
 		// Recebe a Mensagem
 		BufferedReader entrada_servidor = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
 
+		//Envia nome para o servidor
 		saida_servidor.writeBytes(nome_cliente.getText() + "\n");
+
+		// lê resposta do servidor
 		msg_recebida = entrada_servidor.readLine();
+
 		System.out.println(msg_recebida);
 
-		// envia a linha para o servidor
+		// envia o assunto para o servidor
 		saida_servidor.writeBytes(assunto.getSelectedValue() + '\n');
-
-		// lê a linha para o servidor
-		msg_recebida = entrada_servidor.readLine();
-
-		// apresenta a linha do servidor na console
-		System.out.println(msg_recebida);
 
 		// Inicializa a Thread que recebe a mensagem 
 		Thread t = new Cliente(entrada_servidor);
@@ -79,15 +78,16 @@ public class Cliente extends Thread {
 		t.start();
 
 		while (true) {
+			
 			// le uma linha do teclado
 			msg_digitada = teclado.readLine();
 
-			// testa se o chat deve ser finalizado
-			if (msg_digitada.startsWith("fim") == true)
-				break;
-
 			// envia a linha para o servidor
 			saida_servidor.writeBytes(msg_digitada + '\n');
+
+			// testa se o chat deve ser finalizado
+			if (msg_digitada.startsWith("sair") == true)
+			break;
 		}
 
 		// lê uma linha do servidor

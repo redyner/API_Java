@@ -29,9 +29,10 @@ public class Servidor extends Thread {
 		// cria socket de comunicação com os clientes na porta 8657;
 		ServerSocket servidor = new ServerSocket(8657);
 
-		// Classe de Execu��o
-		while (true) {
-			// espera conex�o de algum cliente
+		// Classe de Execução
+		while (true) 
+		{
+			// espera conexão de algum cliente
 			System.out.println("Esperando cliente se conectar...");
 			Socket cx = servidor.accept();
 			Thread t = new Servidor(cx);
@@ -42,7 +43,8 @@ public class Servidor extends Thread {
 	}
 
 	
-	public void run() {
+	public void run() 
+	{
 		String msg_recebida; // lida do cliente
 		String msg_enviada; // enviada ao cliente
 		String nome_cliente; // nome do Cliente
@@ -54,6 +56,7 @@ public class Servidor extends Thread {
 			entrada_cliente = new BufferedReader(new InputStreamReader(conexao.getInputStream()));
 
 			DataOutputStream saida_cliente = new DataOutputStream(conexao.getOutputStream());
+
 			// lê o nome do Cliente
 			nome_cliente = entrada_cliente.readLine();
 
@@ -88,6 +91,7 @@ public class Servidor extends Thread {
 			}
 			
 			i = 0;
+
 			//Envia a mensagem recebida para todos do mesmo assunto
 			while (i < v.size()) {
 				if (v.get(i) != saida_cliente)
@@ -99,8 +103,8 @@ public class Servidor extends Thread {
 			msg_recebida = entrada_cliente.readLine();
 
 			//Enquanto a mensagem for recebida não for nula ou finalizada
-			while (msg_recebida != null && !(msg_recebida.trim().equals("")) && !(msg_recebida.startsWith("fim"))) {
-
+			while (msg_recebida != null && !(msg_recebida.trim().equals("")) && !(msg_recebida.startsWith("sair"))) 
+			{
 				// Mostra Mensagem recebida pelo Console
 				System.out.println(nome_cliente + ": " + msg_recebida+"\n");
 
@@ -121,24 +125,31 @@ public class Servidor extends Thread {
 			
 			i = 0;
 
-			while (i < v.size()) {
-				v.get(i).writeBytes(nome_cliente + " saiu " + assunto + "! Data e Hora: "+dataAtual()+">\n");
+			while (i < v.size()) 
+			{
+				v.get(i).writeBytes("Servidor diz: "+nome_cliente + " saiu do assunto " + assunto + " ("+dataAtual()+")\n");
 				i = i + 1;
 			}
 			
 			i = 0;
 			
-			while (i < v.size()) {
-				if (v.get(i) == saida_cliente) {
+			while (i < v.size()) 
+			{
+				if (v.get(i) == saida_cliente) 
+				{
 					v.remove(v.get(i));
 					System.out.println("Cliente Desconectado");
 				}
 				i = i + 1;
 			}
-			conexao.close();
-		} catch (IOException e) {
+			//conexao.close();
+		} 
+		catch (IOException e) 
+		{
 			e.printStackTrace();
-		}}
+		}
+	}
+
 	private String dataAtual() {
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 		LocalDateTime now = LocalDateTime.now();
